@@ -16,6 +16,8 @@ All notable changes to this project are documented here. Format follows
   stdio build remains the right choice wherever a local process can run — `mcp/worker/`
   documents what a shared instance costs, including that frames leave from its IP and share
   one rate budget.
+- Clarify in `SPEC.md` §3.1 and §5 the placement of the cryptographic `statement` in `accept`
+  (not `offer`), and document the `paper` reference rehearsal rail (`PaperRail`) (#31).
 
 ### Fixed
 

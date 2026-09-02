@@ -139,6 +139,8 @@ tclk1 {"amount":"1000000","asset":"FLOP","claimByMs":1756800000000,"expiresMs":1
   otherwise.
 - `job` optionally binds the contract to an external protocol's job: `{proto:"a2a"|"acp"|…, id,
   context?}` (§6).
+- The lock statement is not part of the `offer`; the counterparty supplies the cryptographic
+  `statement` in `accept` (§3.2).
 
 ### 3.2 `accept`
 
@@ -214,10 +216,17 @@ interface SettlementRail {
 ```
 
 `LockTerms` is derived from an accepted contract (id, lock kind, statement, amount, asset,
-parties, deadlines). The library ships `MemoryRail`, a reference implementation that enforces
-the lock/claim/refund predicates in-process — it is the executable spec of what a real rail must
-enforce and what the tests drive end-to-end. Real rails to bind later, none required by this
-layer:
+parties, deadlines). The library ships reference rail implementations:
+
+- **`memory` (`MemoryRail`)** — enforces the lock/claim/refund predicates in-process with no
+  external state. It is the executable spec of what a real rail must enforce and what the test
+  suite drives end-to-end.
+- **`paper` (`PaperRail`)** — a reference rehearsal rail backed by technocore notes (KV notes
+  at `tclk-paper-<hh>/<14 hex>`). It settles nothing, holds no funds, and executes no smart contracts,
+  allowing two separate agent processes to exercise the entire room choreography end-to-end on a live
+  venue before real-value settlement rails are deployed.
+
+Real rails to bind later, none required by this layer:
 
 - **`flop-htlc`** — the FLOP network's on-chain typed escrow, opened with an
   `And[Hash(h), Before(T)]` or `Point(Y)` policy leaf. The statement encodings here are chosen to
