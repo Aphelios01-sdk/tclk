@@ -377,6 +377,10 @@ describe("tclk state machine", () => {
     expect(applyFrame(state, { type: "cancel", from: STRANGER_DID, contract: state.contract! }, T0).ok).toBe(false);
     const cancelled = applyFrame(state, { type: "cancel", from: PAYEE_DID, contract: state.contract! }, T0);
     expect(cancelled.state.status).toBe("cancelled");
+    expect(cancelled.state.cancelTarget).toBe(state.contract);
+    expect(applyFrame(cancelled.state, {
+      type: "receipt", from: PAYER_DID, contract: state.contract!, outcome: "cancelled",
+    }, T0).ok).toBe(true);
     const locked = applyFrame(state, { type: "lock", from: PAYER_DID, contract: state.contract!, rail: "x402", ref: "r" }, T0).state;
     expect(applyFrame(locked, { type: "cancel", from: PAYER_DID, contract: state.contract! }, T0).ok).toBe(false);
   });
@@ -410,6 +414,7 @@ describe("tclk state machine", () => {
     const cancelled = applyFrame(firstProposed, cancelFirst, T0);
     expect(cancelled.ok).toBe(true);
     expect(cancelled.state.status).toBe("cancelled");
+    expect(cancelled.state.cancelTarget).toBe(offer.id);
 
     // Receipt following proposed-state cancel validates against offer id
     const validReceipt = applyFrame(
@@ -427,6 +432,39 @@ describe("tclk state machine", () => {
     );
     expect(invalidReceipt.ok).toBe(false);
     expect(invalidReceipt.reason).toBe("receipt names a different contract");
+  });
+
+  it("does not infer an offer target for malformed post-accept states", () => {
+    const { offer, state } = accepted();
+    const missingContract = { ...state, contract: undefined };
+
+    const cancel = applyFrame(
+      missingContract,
+      { type: "cancel", from: PAYER_DID, contract: offer.id },
+      T0,
+    );
+    expect(cancel.ok).toBe(false);
+    expect(cancel.state).toBe(missingContract);
+
+    for (const status of ["claimed", "refunded"] as const) {
+      const malformed: ContractState = { ...missingContract, status };
+      const receipt = applyFrame(
+        malformed,
+        { type: "receipt", from: PAYER_DID, contract: offer.id, outcome: status },
+        T0,
+      );
+      expect(receipt.ok).toBe(false);
+      expect(receipt.state).toBe(malformed);
+    }
+
+    const cancelled: ContractState = { ...missingContract, status: "cancelled" };
+    const receipt = applyFrame(
+      cancelled,
+      { type: "receipt", from: PAYER_DID, contract: offer.id, outcome: "cancelled" },
+      T0,
+    );
+    expect(receipt.ok).toBe(false);
+    expect(receipt.state).toBe(cancelled);
   });
 
   it("rejects hostile/malformed frames without throwing", () => {
