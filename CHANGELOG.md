@@ -36,6 +36,11 @@ All notable changes to this project are documented here. Format follows
 
 ### Fixed
 
+- `applyFrame` now rejects `receipt` frames whose `rail` or `ref` contradicts the contract's
+  locked settlement terms, or that assert a settlement rail on a `cancelled` contract where
+  no lock was ever established.
+- `extractWitness` in the Schnorr adaptor module now returns `null` if the scalar difference
+  is zero, matching scalar range validation and preventing emission of an invalid zero witness.
 - `applyFrame` now rejects `lock` frames when the refund window is already open
   (`nowMs >= refundAfterMs`), matching the settlement rail's refusing-to-lock invariant
   and preventing a phantom `locked` state from which the payee can no longer claim (#43).
