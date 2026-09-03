@@ -19,6 +19,11 @@ All notable changes to this project are documented here. Format follows
 
 ### Fixed
 
+- `applyFrame` now rejects `lock` frames when the refund window is already open
+  (`nowMs >= refundAfterMs`), matching the settlement rail's own refusing-to-lock
+  invariant and preventing contracts from transitioning to a phantom `locked` state
+  where payee claim is impossible and parties cannot cancel.
+
 - Adaptor scalar parsing now rejects zero and out-of-range values instead of reducing them
   modulo the curve order, matching point-lock witness validation and preventing distinct
   byte strings from being treated as the same scalar (#27).

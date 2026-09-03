@@ -303,9 +303,18 @@ describe("tclk state machine", () => {
     ).toBe(false);
 
     const contract = state.contract!;
-    // Only the payer locks; only an offered rail counts.
+    // Only the payer locks; only an offered rail counts; refund window must not be open.
     expect(applyFrame(state, { type: "lock", from: PAYEE_DID, contract, rail: "flop-htlc", ref: "r" }, T0).ok).toBe(false);
     expect(applyFrame(state, { type: "lock", from: PAYER_DID, contract, rail: "evm-htlc", ref: "r" }, T0).ok).toBe(false);
+    const lateLock = applyFrame(
+      state,
+      { type: "lock", from: PAYER_DID, contract, rail: "x402", ref: "r" },
+      REFUND_AFTER,
+    );
+    expect(lateLock.ok).toBe(false);
+    expect(lateLock.reason).toMatch(/refund window is already open/);
+    expect(lateLock.state.status).toBe("accepted");
+    expect(lateLock.state).toBe(state);
 
     const locked = applyFrame(state, { type: "lock", from: PAYER_DID, contract, rail: "x402", ref: "r" }, T0).state;
     // Only the payee reveals, only with the right secret, only before the refund window.

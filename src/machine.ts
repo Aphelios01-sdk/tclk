@@ -136,6 +136,7 @@ export function applyFrame(state: ContractState, frame: TclkFrame, nowMs: number
       if (state.status !== "accepted") return reject(state, `lock in status ${state.status}`);
       if (frame.contract !== state.contract) return reject(state, "lock names a different contract");
       if (frame.from !== state.payerDid) return reject(state, "only the payer locks");
+      if (nowMs >= state.offer.refundAfterMs) return reject(state, "refund window is already open");
       if (!state.offer.rails.includes(frame.rail)) {
         return reject(state, `rail ${frame.rail} was not offered`);
       }
