@@ -460,6 +460,15 @@ describe("tclk PTLC path (adaptor cycle)", () => {
     expect(lockedStep.state.status).toBe("locked");
     expect(lockedStep.state.presig).toEqual(mismatchedPre);
 
+    // Not merely a pre-signature for the wrong message — a value from no signer at all is stored too.
+    const garbage = { nonce: "0x02" + "00".repeat(32), s: "0x" + "ff".repeat(32) };
+    const garbageStep = applyFrame(acceptedState, {
+      type: "lock", from: PAYER_DID, contract: acceptedState.contract!, rail: "flop-htlc",
+      ref: "escrow-7", presig: garbage,
+    }, T0);
+    expect(garbageStep.ok).toBe(true);
+    expect(garbageStep.state.presig).toEqual(garbage);
+
     // 3. Out-of-band payee verification: payee checks presig against their rail claimMsg.
     // When mismatched, payee verification fails, so payee refuses to adapt or reveal.
     expect(schnorrAdaptor.verifyPreSignature(payerKey, realClaimMsg, ptlc.statement, lockedStep.state.presig!)).toBe(false);
